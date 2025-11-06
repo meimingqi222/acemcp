@@ -16,6 +16,7 @@ dependencies = [
     "uvicorn[standard]>=0.34.0",
     "toml>=0.10.2",
     "websockets>=14.1",
+    "pathspec>=0.12.1",
 ]
 
 [project.scripts]

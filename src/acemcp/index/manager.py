@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 
 import httpx
+import pathspec
 from loguru import logger
 
 
@@ -100,19 +101,26 @@ class IndexManager:
 
         raise last_exception
 
-    def _should_exclude(self, path: Path, root_path: Path) -> bool:
-        """Check if a path should be excluded based on exclude patterns.
+    def _should_exclude(self, path: Path, root_path: Path, gitignore_spec: pathspec.PathSpec | None = None) -> bool:
+        """Check if a path should be excluded based on exclude patterns and .gitignore rules.
 
         Args:
             path: Path to check
             root_path: Root path of the project
+            gitignore_spec: Pathspec object from .gitignore file (optional)
 
         Returns:
             True if path should be excluded, False otherwise
         """
         try:
             relative_path = path.relative_to(root_path)
-            path_str = str(relative_path)
+            # Use forward slashes for cross-platform consistency, which pathspec expects
+            relative_path_str = str(relative_path.as_posix())
+
+            # Check against .gitignore rules first
+            if gitignore_spec and gitignore_spec.match_file(relative_path_str):
+                return True
+
             path_parts = relative_path.parts
 
             for pattern in self.exclude_patterns:
@@ -122,12 +130,7 @@ class IndexManager:
                         return True
 
                 # Check if pattern matches the full relative path
-                if fnmatch.fnmatch(path_str, pattern):
-                    return True
-
-                # Check if pattern matches with forward slashes
-                path_str_forward = path_str.replace("\\", "/")
-                if fnmatch.fnmatch(path_str_forward, pattern):
+                if fnmatch.fnmatch(relative_path_str, pattern):
                     return True
 
             return False
@@ -214,20 +217,31 @@ class IndexManager:
             msg = f"Project root path does not exist: {project_root_path}"
             raise FileNotFoundError(msg)
 
+        # Load .gitignore file if it exists
+        gitignore_file = root_path / ".gitignore"
+        gitignore_spec = None
+        if gitignore_file.exists():
+            try:
+                with gitignore_file.open("r", encoding="utf-8") as f:
+                    gitignore_spec = pathspec.PathSpec.from_lines("gitwildmatch", f)
+                logger.info("Loaded .gitignore rules")
+            except Exception:
+                logger.warning(f"Failed to read or parse .gitignore file: {gitignore_file}")
+
         for dirpath, dirnames, filenames in os.walk(root_path):
             current_dir = Path(dirpath)
 
             # Filter out excluded directories to prevent os.walk from descending into them
             dirnames[:] = [
                 d for d in dirnames
-                if not self._should_exclude(current_dir / d, root_path)
+                if not self._should_exclude(current_dir / d, root_path, gitignore_spec)
             ]
 
             for filename in filenames:
                 file_path = current_dir / filename
 
                 # Check if file should be excluded
-                if self._should_exclude(file_path, root_path):
+                if self._should_exclude(file_path, root_path, gitignore_spec):
                     excluded_count += 1
                     logger.debug(f"Excluded file: {file_path.relative_to(root_path)}")
                     continue
