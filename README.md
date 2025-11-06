@@ -2,6 +2,10 @@
 
 MCP server for codebase indexing and semantic search.
 
+<a href="https://glama.ai/mcp/servers/@qy527145/acemcp">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@qy527145/acemcp/badge" alt="Acemcp MCP server" />
+</a>
+
 ## Installation
 
 ```bash
