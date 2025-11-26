@@ -31,27 +31,20 @@ async def list_tools() -> list[Tool]:
     return [
         Tool(
             name="search_context",
-            description="Search for relevant code context based on a query within a specific project. "
-            "This tool automatically performs incremental indexing before searching, "
-            "ensuring results are always up-to-date. "
-            "Returns formatted text snippets from the codebase that are semantically related to your query. "
-            "IMPORTANT: Use forward slashes (/) as path separators in project_root_path, even on Windows.",
+            description="Semantic code search tool. Use when you need to find code by meaning/intent rather than exact text. "
+            "Returns relevant code snippets with file paths and line numbers. "
+            "Best for: finding implementations, understanding code structure, locating usage patterns. "
+            "Input natural language queries like 'how is user authentication implemented' or 'database connection handling'.",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "project_root_path": {
                         "type": "string",
-                        "description": "Absolute path to the project root directory. Use forward slashes (/) as separators. Example: C:/Users/username/projects/myproject",
+                        "description": "Absolute path to project root (use forward slashes). Example: C:/Users/name/project",
                     },
                     "query": {
                         "type": "string",
-                        "description": "Natural language search query to find relevant code context. This tool performs"
-                        " semantic search and returns code snippets that match your query. Examples: "
-                        "'logging configuration setup initialization logger' (finds logging setup code), "
-                        "'user authentication login' (finds auth-related code), 'database connection pool' "
-                        "(finds DB connection code), 'error handling exception' (finds error handling patterns), "
-                        "'API endpoint routes' (finds API route definitions). "
-                        "The tool returns formatted text snippets with file paths and line numbers showing where the relevant code is located.",
+                        "description": "Natural language query describing what code you're looking for. Be specific about the functionality or concept.",
                     },
                 },
                 "required": ["project_root_path", "query"],
