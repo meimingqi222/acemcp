@@ -384,10 +384,11 @@ class IndexManager:
                 blob_hash = calculate_blob_name(blob["path"], blob["content"])
                 blob_hash_map[blob_hash] = blob
 
-            # Separate blobs into existing and new
+            # Separate blobs into existing and new, and detect deleted ones
             all_blob_hashes = set(blob_hash_map.keys())
             existing_hashes = all_blob_hashes & existing_blob_names  # Intersection
             new_hashes = all_blob_hashes - existing_blob_names  # Difference
+            deleted_hashes = existing_blob_names - all_blob_hashes
 
             # Blobs that need to be uploaded
             blobs_to_upload = [blob_hash_map[h] for h in new_hashes]
@@ -478,7 +479,9 @@ class IndexManager:
                     "existing_blobs": len(existing_hashes),
                     "new_blobs": len(uploaded_blob_names),
                     "skipped_blobs": len(existing_hashes),
+                    "deleted_blobs": len(deleted_hashes),
                 },
+                "deleted_blob_names": list(deleted_hashes),
             }
 
         except Exception as e:
@@ -515,6 +518,8 @@ class IndexManager:
                 stats = index_result["stats"]
                 logger.info(f"Auto-indexing completed: total={stats['total_blobs']}, existing={stats['existing_blobs']}, new={stats['new_blobs']}")
 
+            deleted_blob_names = index_result.get("deleted_blob_names", [])
+
             # Step 2: Load indexed blob names
             projects = self._load_projects()
             blob_names = projects.get(normalized_path, [])
@@ -529,7 +534,7 @@ class IndexManager:
                 "blobs": {
                     "checkpoint_id": None,
                     "added_blobs": blob_names,
-                    "deleted_blobs": [],
+                    "deleted_blobs": deleted_blob_names,
                 },
                 "dialog": [],
                 "max_output_length": 0,
