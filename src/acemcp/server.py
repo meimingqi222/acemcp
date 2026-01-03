@@ -46,14 +46,28 @@ async def list_tools() -> list[Tool]:
                     },
                     "query": {
                         "type": "string",
-                        "description": """Provide a clear natural language description of the code behavior, workflow, or issue you want to locate. You may also add optional keywords to improve semantic matching.
-Recommended format:
-Natural language description + optional keywords
-Examples:
-“I want to find where the server handles chunk merging in the file upload process. Keywords: upload chunk merge, file service”
-“Locate where the system refreshes cached data after user permissions are updated. Keywords: permission update, cache refresh”
-“Find the initialization flow of message queue consumers during startup. Keywords: mq consumer init, subscribe”
-“Show me how configuration hot-reload is triggered and applied in the code. Keywords: config reload, hot update”""",
+                        "description": """CRITICAL RULES FOR QUERY INPUT:
+
+1. MUST be a complete natural language sentence (subject + verb + object structure)
+2. NEVER use space-separated keywords or phrases
+3. NEVER use comma-separated tags
+4. NEVER use "Keywords:" prefix or similar formats
+5. NEVER input only function names or symbols
+
+WHAT WILL FAIL (WRONG):
+- "user login JWT token validation"
+- "upload chunk merge file service"
+- "permission update cache refresh"
+- "Keywords: upload, merge, file"
+- "verifyToken function"
+
+WHAT WILL WORK (CORRECT):
+- "Find where the server handles chunk merging during file upload"
+- "Locate where the system refreshes cached data after user permissions are updated"
+- "Show me how configuration hot-reload is triggered and applied"
+- "Find the code that validates JWT tokens during user authentication"
+
+REASONING: This tool uses semantic vector search which requires complete sentences to generate accurate embeddings. Space-separated keywords or phrase fragments break the semantic meaning and produce poor results. Always describe what you want to find in a full, grammatically correct sentence.""",
                     },
                 },
                 "required": ["project_root_path", "query"],
